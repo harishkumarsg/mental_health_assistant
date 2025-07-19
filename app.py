@@ -1,7 +1,7 @@
 import streamlit as st
 from chatbot_logic import analyze_input
 
-# Streamlit page configuration
+# Set up the Streamlit page
 st.set_page_config(page_title="Mental Health Assistant", page_icon="💬", layout="centered")
 
 # Custom CSS styling
@@ -45,24 +45,28 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Title
+# App Title and Instructions
 st.title("💬 Mental Health Assistant")
 st.markdown("##### Type in **Tamil**, **Hindi**, or **English**. It will auto-detect and support you accordingly.")
 st.markdown("Share your thoughts and receive real-time emotional support powered by multilingual NLP. 🌍")
 
-# Input box
+# Input from user
 user_input = st.text_input("📝 What's on your mind today?", placeholder="e.g., I'm feeling overwhelmed with exams...")
 
 if user_input:
     try:
         result = analyze_input(user_input)
 
-        # Validate result dictionary
+        # Expected output format
         required_keys = ['original', 'translated', 'sentiment', 'sentiment_score', 'emotion', 'confidence', 'suggestion']
-        if not all(k in result for k in required_keys):
-            st.error("⚠️ Unexpected output format from analyze_input(). Please check backend.")
+
+        if not isinstance(result, dict):
+            st.error("⚠️ Unexpected response format. Expected a dictionary from analyze_input().")
+        elif not all(key in result for key in required_keys):
+            st.error("⚠️ Some expected keys are missing in the output. Please check the backend logic.")
+            st.json(result)  # Show actual response for debugging
         else:
-            # Output section
+            # Displaying results
             st.markdown("---")
             st.markdown("### 🧠 Chat Analysis")
 
@@ -71,26 +75,29 @@ if user_input:
             st.markdown(f"**📊 Sentiment:** `{result['sentiment'].upper()}` ({result['sentiment_score']}%)")
             st.markdown(f"**💬 Detected Emotion:** `{result['emotion'].upper()}` ({result['confidence']}%)")
 
-            # Emotion Confidence Progress Bar
-            confidence = float(result['confidence'])
-            st.markdown("### 📈 Emotion Confidence Level")
-            st.markdown(f"""
-                <div class='emotion-bar'>
-                    <div class='emotion-fill' style='width: {confidence}%'>{confidence:.2f}%</div>
-                </div>
-            """, unsafe_allow_html=True)
+            # Emotion Confidence Bar
+            try:
+                confidence = float(result['confidence'])
+                st.markdown("### 📈 Emotion Confidence Level")
+                st.markdown(f"""
+                    <div class='emotion-bar'>
+                        <div class='emotion-fill' style='width: {confidence}%'>{confidence:.2f}%</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            except ValueError:
+                st.warning("⚠️ Invalid confidence score format.")
 
-            # Coping Tip
+            # Personalized Coping Tip
             st.markdown("### 🧘‍♀️ Personalized Coping Tip")
             st.markdown(f"<div class='suggestion-box'>{result['suggestion']}</div>", unsafe_allow_html=True)
 
-            # Optional extra tip
+            # Optional: Extra tip
             if result.get("extra_tip"):
                 st.markdown("### 💡 Extra Tip")
                 st.markdown(f"- {result['extra_tip']}")
 
-            # Optional guided meditation
-            if result.get("meditation_link"):
+            # Optional: Guided meditation
+            if result.get("meditation_link") and result.get("meditation_title"):
                 st.markdown("### 🎧 Try This")
                 st.markdown(f"[{result['meditation_title']}]({result['meditation_link']})")
 
@@ -98,5 +105,5 @@ if user_input:
             st.caption("⚠️ This assistant is a prototype research tool. Please consult mental health professionals for serious concerns.")
 
     except Exception as e:
-        st.error("🚨 An error occurred during processing. Please try again later.")
+        st.error("🚨 An unexpected error occurred while analyzing your input.")
         st.exception(e)

@@ -54,39 +54,49 @@ st.markdown("Share your thoughts and receive real-time emotional support powered
 user_input = st.text_input("📝 What's on your mind today?", placeholder="e.g., I'm feeling overwhelmed with exams...")
 
 if user_input:
-    result = analyze_input(user_input)
+    try:
+        result = analyze_input(user_input)
 
-    # Output section
-    st.markdown("---")
-    st.markdown("### 🧠 Chat Analysis")
+        # Validate result dictionary
+        required_keys = ['original', 'translated', 'sentiment', 'sentiment_score', 'emotion', 'confidence', 'suggestion']
+        if not all(k in result for k in required_keys):
+            st.error("⚠️ Unexpected output format from analyze_input(). Please check backend.")
+        else:
+            # Output section
+            st.markdown("---")
+            st.markdown("### 🧠 Chat Analysis")
 
-    st.markdown(f"**🔸 Original Input:** {result['original']}")
-    st.markdown(f"**🔄 Translated Text:** {result['translated']}")
-    st.markdown(f"**📊 Sentiment:** `{result['sentiment'].upper()}` ({result['sentiment_score']}%)")
-    st.markdown(f"**💬 Detected Emotion:** `{result['emotion'].upper()}` ({result['confidence']}%)")
+            st.markdown(f"**🔸 Original Input:** {result['original']}")
+            st.markdown(f"**🔄 Translated Text:** {result['translated']}")
+            st.markdown(f"**📊 Sentiment:** `{result['sentiment'].upper()}` ({result['sentiment_score']}%)")
+            st.markdown(f"**💬 Detected Emotion:** `{result['emotion'].upper()}` ({result['confidence']}%)")
 
-    # Emotion Confidence Progress Bar
-    st.markdown("### 📈 Emotion Confidence Level")
-    confidence = float(result['confidence'])
-    st.markdown(f"""
-        <div class='emotion-bar'>
-            <div class='emotion-fill' style='width: {confidence}%'>{confidence:.2f}%</div>
-        </div>
-    """, unsafe_allow_html=True)
+            # Emotion Confidence Progress Bar
+            confidence = float(result['confidence'])
+            st.markdown("### 📈 Emotion Confidence Level")
+            st.markdown(f"""
+                <div class='emotion-bar'>
+                    <div class='emotion-fill' style='width: {confidence}%'>{confidence:.2f}%</div>
+                </div>
+            """, unsafe_allow_html=True)
 
-    # Coping Tip
-    st.markdown("### 🧘‍♀️ Personalized Coping Tip")
-    st.markdown(f"<div class='suggestion-box'>{result['suggestion']}</div>", unsafe_allow_html=True)
+            # Coping Tip
+            st.markdown("### 🧘‍♀️ Personalized Coping Tip")
+            st.markdown(f"<div class='suggestion-box'>{result['suggestion']}</div>", unsafe_allow_html=True)
 
-    # Optional extra tip
-    if result.get("extra_tip"):
-        st.markdown("### 💡 Extra Tip")
-        st.markdown(f"- {result['extra_tip']}")
+            # Optional extra tip
+            if result.get("extra_tip"):
+                st.markdown("### 💡 Extra Tip")
+                st.markdown(f"- {result['extra_tip']}")
 
-    # Optional guided meditation
-    if result.get("meditation_link"):
-        st.markdown("### 🎧 Try This")
-        st.markdown(f"[{result['meditation_title']}]({result['meditation_link']})")
+            # Optional guided meditation
+            if result.get("meditation_link"):
+                st.markdown("### 🎧 Try This")
+                st.markdown(f"[{result['meditation_title']}]({result['meditation_link']})")
 
-    st.markdown("---")
-    st.caption("⚠️ This assistant is a prototype research tool. Please consult mental health professionals for serious concerns.")
+            st.markdown("---")
+            st.caption("⚠️ This assistant is a prototype research tool. Please consult mental health professionals for serious concerns.")
+
+    except Exception as e:
+        st.error("🚨 An error occurred during processing. Please try again later.")
+        st.exception(e)

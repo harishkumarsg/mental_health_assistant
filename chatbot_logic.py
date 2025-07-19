@@ -1,3 +1,4 @@
+# chatbot_logic.py
 import torch
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 from langdetect import detect
@@ -35,9 +36,9 @@ def generate_suggestion(emotion):
             "tip": "Anger is natural. Try a short walk or deep breathing to cool off.",
         },
         "fear": {
-            "tip": "Exams can be stressful. You're not alone. Try the 4-7-8 breathing technique:\n- Inhale 4 sec\n- Hold 7 sec\n- Exhale 8 sec",
-            "note": "💡 Tip: Break your study into small chunks and take short breaks. You’ll feel more in control.",
-            "link": "🎧 Try this 5-minute guided meditation for exam stress"
+            "tip": "Feeling afraid is okay. Try the 4-7-8 breathing technique:\n- Inhale 4 sec\n- Hold 7 sec\n- Exhale 8 sec",
+            "note": "💡 Tip: Break tasks into small parts and reward yourself after each one.",
+            "link": "🎧 Try this 5-minute guided meditation: https://www.youtube.com/watch?v=inpok4MKVLM"
         },
         "love": {
             "tip": "That’s beautiful! Connect with people who matter to you.",
@@ -51,29 +52,28 @@ def generate_suggestion(emotion):
 def analyze_input(user_input):
     lang = detect(user_input)
     translated = GoogleTranslator(source='auto', target='en').translate(user_input) if lang != 'en' else user_input
+
     sentiment_result = sentiment_pipe(translated)[0]
     sentiment_label = sentiment_result['label'].upper()
     sentiment_score = round(sentiment_result['score'] * 100, 2)
 
     emotion, confidence = detect_emotion(translated)
     suggestion_block = generate_suggestion(emotion)
-    
+
     bar_blocks = int(confidence * 20)  # 20 bars max
     confidence_bar = '█' * bar_blocks + ' ' * (20 - bar_blocks)
 
-    response = f"""🧠 Chat Analysis  
-🔸 Original Input: {user_input}  
-🔄 Translated Text: {translated}  
-📊 Sentiment: {sentiment_label} ({sentiment_score}%)  
-💬 Detected Emotion: {emotion.upper()} ({round(confidence * 100, 2)}%)
-
-📈 Emotion Confidence Level  
-{confidence_bar} {round(confidence * 100, 2)}%
-
-🧘‍♀️ Personalized Coping Tip  
-{suggestion_block.get("tip")}
-
-{suggestion_block.get("note", "")}
-{suggestion_block.get("link", "")}
-"""
-    return response
+    return {
+        "original": user_input,
+        "translated": translated,
+        "sentiment": {
+            "label": sentiment_label,
+            "score": sentiment_score
+        },
+        "emotion": {
+            "label": emotion,
+            "confidence": round(confidence * 100, 2),
+            "bar": confidence_bar
+        },
+        "suggestion": suggestion_block
+    }

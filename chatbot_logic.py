@@ -25,26 +25,55 @@ def detect_emotion(text):
 
 def generate_suggestion(emotion):
     suggestions = {
-        "joy": "It's great to hear you're feeling joyful! Keep doing what makes you happy.",
-        "sadness": "I'm sorry you're feeling sad. Talking to someone you trust or engaging in a relaxing activity can help.",
-        "anger": "It's okay to feel angry. Deep breathing and a short walk may help calm your mind.",
-        "fear": "Fear is natural. Try grounding yourself with calming techniques like deep breathing.",
-        "love": "That's beautiful! Spread the love and connect with others.",
-        "surprise": "Surprises can be exciting or shocking. Take a moment to process what you're feeling."
+        "joy": {
+            "tip": "It's great to hear you're feeling joyful! Keep doing what makes you happy.",
+        },
+        "sadness": {
+            "tip": "I'm sorry you're feeling sad. Try journaling, a short walk, or speaking to a close friend.",
+        },
+        "anger": {
+            "tip": "Anger is natural. Try a short walk or deep breathing to cool off.",
+        },
+        "fear": {
+            "tip": "Exams can be stressful. You're not alone. Try the 4-7-8 breathing technique:\n- Inhale 4 sec\n- Hold 7 sec\n- Exhale 8 sec",
+            "note": "💡 Tip: Break your study into small chunks and take short breaks. You’ll feel more in control.",
+            "link": "🎧 Try this 5-minute guided meditation for exam stress"
+        },
+        "love": {
+            "tip": "That’s beautiful! Connect with people who matter to you.",
+        },
+        "surprise": {
+            "tip": "Surprises can be good or confusing. Take time to reflect and understand your emotions.",
+        }
     }
-    return suggestions.get(emotion, "I'm here for you. Remember to take care of yourself.")
+    return suggestions.get(emotion, {"tip": "I'm here for you. Remember to take care of yourself."})
 
 def analyze_input(user_input):
     lang = detect(user_input)
     translated = GoogleTranslator(source='auto', target='en').translate(user_input) if lang != 'en' else user_input
-    sentiment = sentiment_pipe(translated)[0]
+    sentiment_result = sentiment_pipe(translated)[0]
+    sentiment_label = sentiment_result['label'].upper()
+    sentiment_score = round(sentiment_result['score'] * 100, 2)
+
     emotion, confidence = detect_emotion(translated)
-    suggestion = generate_suggestion(emotion)
-    return {
-        "original": user_input,
-        "translated": translated,
-        "sentiment": sentiment['label'],
-        "emotion": emotion,
-        "confidence": round(confidence * 100, 2),
-        "suggestion": suggestion
-    }
+    suggestion_block = generate_suggestion(emotion)
+    
+    bar_blocks = int(confidence * 20)  # 20 bars max
+    confidence_bar = '█' * bar_blocks + ' ' * (20 - bar_blocks)
+
+    response = f"""🧠 Chat Analysis  
+🔸 Original Input: {user_input}  
+🔄 Translated Text: {translated}  
+📊 Sentiment: {sentiment_label} ({sentiment_score}%)  
+💬 Detected Emotion: {emotion.upper()} ({round(confidence * 100, 2)}%)
+
+📈 Emotion Confidence Level  
+{confidence_bar} {round(confidence * 100, 2)}%
+
+🧘‍♀️ Personalized Coping Tip  
+{suggestion_block.get("tip")}
+
+{suggestion_block.get("note", "")}
+{suggestion_block.get("link", "")}
+"""
+    return response

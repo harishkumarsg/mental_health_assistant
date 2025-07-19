@@ -51,38 +51,31 @@ def generate_suggestion(emotion):
     return suggestions.get(emotion, {"tip": "I'm here for you. Remember to take care of yourself."})
 
 def analyze_input(user_input):
-    try:
-        lang = detect(user_input)
-        translated = GoogleTranslator(source='auto', target='en').translate(user_input) if lang != 'en' else user_input
+    lang = detect(user_input)
+    translated = GoogleTranslator(source='auto', target='en').translate(user_input) if lang != 'en' else user_input
 
-        sentiment_result = sentiment_pipe(translated)[0]
-        sentiment_label = sentiment_result['label'].upper()
-        sentiment_score = round(sentiment_result['score'] * 100, 2)
+    sentiment_result = sentiment_pipe(translated)[0]
+    sentiment_label = sentiment_result['label'].upper()
+    sentiment_score = round(sentiment_result['score'] * 100, 2)
 
-        emotion, confidence = detect_emotion(translated)
-        suggestion_block = generate_suggestion(emotion)
+    emotion, confidence = detect_emotion(translated)
+    suggestion_block = generate_suggestion(emotion)
 
-        bar_blocks = int(confidence * 20)
-        confidence_bar = '█' * bar_blocks + ' ' * (20 - bar_blocks)
+    bar_blocks = int(confidence * 20)  # 20 bars max
+    confidence_bar = '█' * bar_blocks + ' ' * (20 - bar_blocks)
 
-        return {
-            "status": "success",
-            "original": user_input,
-            "translated": translated,
-            "sentiment": {
-                "label": sentiment_label,
-                "score": sentiment_score
-            },
-            "emotion": {
-                "label": emotion,
-                "confidence": round(confidence * 100, 2),
-                "bar": confidence_bar
-            },
-            "suggestion": suggestion_block
-        }
-
-    except Exception as e:
-        return {
-            "status": "error",
-            "error_message": str(e)
-        }
+    return {
+        "status": "success",
+        "original": user_input,
+        "translated": translated,
+        "sentiment": {
+            "label": sentiment_label,
+            "score": sentiment_score
+        },
+        "emotion": {
+            "label": emotion,
+            "confidence": round(confidence * 100, 2),
+            "bar": confidence_bar
+        },
+        "suggestion": suggestion_block
+    }
